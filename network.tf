@@ -78,6 +78,15 @@ resource "aws_security_group" "allow_sshweb" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+    ingress {
+    description      = "Cluster communication"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["172.16.10.0/24"]
+    
+  }
+
   egress {
     from_port        = 0
     to_port          = 0

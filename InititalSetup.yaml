@@ -1,0 +1,137 @@
+---
+- name : Install the required packages, set the Selinux to permissive , disable the swap etc 
+  hosts: all
+  become : True
+  tasks :
+  
+  - name: Ensure SELinux is set to permissive mode in configuration file 
+    lineinfile:
+      path: /etc/selinux/config
+      regexp: '^SELINUX='
+      line: SELINUX=permissive
+  
+  - name: Put SELinux in permissive mode.
+    ansible.posix.selinux:
+      policy: targeted
+      state: permissive
+
+  - name: Configure required modules
+    shell : modprobe overlay ; modprobe br_netfilter
+
+  - name: make it permenent
+    lineinfile:
+      create: yes
+      path: /etc/modules-load.d/containerd.conf
+      line: overlay
+
+  - name: make it permenent
+    lineinfile:
+      path: /etc/modules-load.d/containerd.conf
+      line: br_netfilter
+
+  - name: Configure required sysctl to persist across system reboots
+    lineinfile:
+      create: yes
+      path: /etc/sysctl.d/99-kubernetes-cri.conf
+      line: net.bridge.bridge-nf-call-iptables  = 1
+
+  - name: Configure required sysctl to persist across system reboots
+    lineinfile:
+      path: /etc/sysctl.d/99-kubernetes-cri.conf
+      line: net.ipv4.ip_forward                 = 1
+
+  - name: Configure required sysctl to persist across system reboots
+    lineinfile:
+      path: /etc/sysctl.d/99-kubernetes-cri.conf
+      line: net.bridge.bridge-nf-call-ip6tables = 1
+
+  - name: Configure required sysctl to persist across system reboots
+    shell: sudo sysctl --system
+
+ 
+  - name: Add kubernetes repository
+    yum_repository:
+      name: Kubernetes
+      description: Kubernetes
+      baseurl: 'https://pkgs.k8s.io/core:/stable:/v1.28/rpm/'
+      #baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+      enabled: True
+      gpgcheck: False
+      gpgcakey : 'https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key'
+      #gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      #exclude: kubelet kubeadm kubectl cri-tools kubernetes-cni
+
+# Step 2.2: Kubelet will not start if the system has swap enabled, 
+# so we are disabling swap using the below code.
+  - name: Remove swapfile from /etc/fstab
+    mount:
+      name: "{{ item }}"
+      fstype: swap
+      state: absent
+    with_items:
+      - swap
+      - none
+
+  - name: Disable swap
+    command: swapoff -a
+    when: ansible_swaptotal_mb > 0  
+
+  - name: Install a list of packages for kubernetes
+    yum:
+      name:
+        - kubelet
+        - kubeadm
+        - kubectl
+        - containerd
+         
+      state: present
+
+      
+  
+  - name: Enable/start the kubelet service 
+    systemd_service:
+      name: kubelet
+      state: started
+      enabled: true
+
+
+
+  - name: ensure that containerd directory is created 
+    ansible.builtin.file: 
+      path: /etc/containerd
+
+  - name: Create the containerd configuration 
+    shell: containerd config default | tee /etc/containerd/config.toml
+
+
+
+  - name: Enable/start the container runtime service 
+    systemd_service:
+      name: containerd
+      state: restarted
+      enabled: true
+
+  - name: Configure node ip
+    lineinfile:
+      path: /etc/containerd/config.toml
+      search_string: SystemdCgroup
+      line: SystemdCgroup = true
+  
+  - name: Configure node ip
+    lineinfile:
+      create: yes
+      path: /etc/default/kubelet
+      line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
+
+  - name: Restart kubelet service to the above argument 
+    service:
+      name: kubelet
+      daemon_reload: yes
+      state: restarted
+
+  - name: Restart containerd service to the above argument 
+    service:
+      name: containerd
+      daemon_reload: yes
+      state: restarted
+

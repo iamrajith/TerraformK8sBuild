@@ -1,0 +1,37 @@
+---
+- name : Create the key and copy to the nodes 
+  hosts: nodes,master,jumpserver
+  become : true 
+  tasks :
+    - name: Create the .ssh diectory,if it is not already exist
+      file:
+        path: /home/rajith/.ssh
+        state: directory
+        owner: rajith
+        group: rajith
+        #mode: '0700'
+    - name: Generate an OpenSSH keypair 
+      community.crypto.openssh_keypair:
+        path: '/home/rajith/.ssh/id_rsa'
+        size: 2048
+        force: True
+        owner: rajith
+        group: rajith
+      when: inventory_hostname == 'jumpserver'
+    - name: Set authorized key for user rajith copying it from current user
+      authorized_key:
+        user: rajith
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+    - name: Disable password login
+      lineinfile: 
+        dest: /etc/ssh/sshd_config 
+        regexp: "^PasswordAuthentication" 
+        line: "PasswordAuthentication no" 
+        state: present
+      when: inventory_hostname != 'jumpserver'
+    - name: Restart the sshd service 
+      service : 
+       name : sshd 
+       state : restarted
+      when: inventory_hostname != 'jumpserver'
