@@ -22,6 +22,18 @@ resource "aws_subnet" "my_subnet" {
 
 #Subnet 2
 
+resource "aws_subnet" "my_subnet2" {
+  vpc_id            = aws_vpc.my_vpc.id
+  cidr_block        = "172.16.20.0/24"
+  availability_zone = "us-west-2b"
+
+
+  tags = {
+    Name = "tf-example"
+  }
+}
+
+
 #Internet gateway 
 
 resource "aws_internet_gateway" "gw" {
