@@ -1,0 +1,47 @@
+---
+- name: Create user and assign privileges in Kubernetes
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Create a namespace
+      k8s:
+        api_version: v1
+        kind: Namespace
+        name: namespace1
+        state: present
+
+    - name: Create a service account
+      k8s:
+        api_version: v1
+        kind: ServiceAccount
+        name: user1
+        namespace: namespace1
+        state: present
+
+    - name: Create a role with full privileges
+      k8s:
+        api_version: rbac.authorization.k8s.io/v1
+        kind: Role
+        name: FullAccessRole
+        namespace: namespace1
+        rules:
+          - apiGroups: [""]
+            resources: ["*"]
+            verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+        state: present
+
+    - name: Bind the role to the service account
+      k8s:
+        api_version: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        name: FullAccessBinding
+        namespace: namespace1
+        role_ref:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: FullAccessRole
+        subjects:
+          - kind: ServiceAccount
+            name: user1
+            namespace: namespace1
+        state: present

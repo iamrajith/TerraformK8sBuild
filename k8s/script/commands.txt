@@ -1,0 +1,60 @@
+kubectl create namespace namespace1
+
+
+kubectl apply -f serviceaccount.yaml
+
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user1
+  namespace: namespace1
+
+---------------------------
+kubectl apply -f role.yaml
+
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: FullAccessRole
+  namespace: namespace2
+rules:
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+----------------------
+
+kubectl apply -f rolebinding.yaml
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: FullAccessBinding
+  namespace: namespace1
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: FullAccessRole
+subjects:
+  - kind: ServiceAccount
+    name: user1
+    namespace: namespace1
+openssl genrsa -out user1.key 2048
+openssl req -new -key user1.key -out user1.csr -subj "/CN=user1"
+
+cat user1.csr | base64 | tr -d "\n"
+
+---------------------
+kubectl config --kubeconfig=user1config  set-cluster kubernetes --server=https://172.16.10.100:6443  --certificate-authority=ca.crt --embed-certs=true 
+kubectl config --kubeconfig=user1config set-credentials user1 --client-certificate=user1.crt --client-key=user1.key --embed-certs=true 
+kubectl config --kubeconfig=user1config set-context user1  --cluster=kubernetes  --namespace=namespace1 --user=user1 
+
+
+kubectl config set-credentials --client-certificate=dummy
+
+--------------------
+
+kubectl config use-context user1@kubernetes

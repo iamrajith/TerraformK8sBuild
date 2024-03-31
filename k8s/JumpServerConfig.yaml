@@ -35,3 +35,20 @@
        name : sshd 
        state : restarted
       when: inventory_hostname != 'jumpserver'
+    - name: Add kubernetes repository
+      yum_repository:
+       name: Kubernetes
+       description: Kubernetes
+       baseurl: 'https://pkgs.k8s.io/core:/stable:/v1.28/rpm/'
+       #baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+       enabled: True
+       gpgcheck: False
+       gpgcakey : 'https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key'
+       #gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+       #exclude: kubelet kubeadm kubectl cri-tools kubernetes-cni
+    
+    - name: Install a list of packages for kubernetes
+      yum:
+       name:
+        - kubectl
+       state: present

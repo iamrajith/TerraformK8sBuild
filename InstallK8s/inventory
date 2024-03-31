@@ -1,0 +1,18 @@
+[jumpserver]
+jumpserver	ansible_connection=local
+[master]
+master      'node_ip=172.16.10.100'
+[nodes]
+node01      'node_ip=172.16.10.101'
+node02      'node_ip=172.16.10.102'
+node03      'node_ip=172.16.10.103'
+node04      'node_ip=172.16.10.104'
+[k8s:children]
+master
+nodes
+[all:vars]
+ansible_user=rajith
+ansible_password=rajith
+ansible_connection=ssh
+#ansible_ssh_private_key_file=/home/devops/.ssh/id_rsa 
+#ansible_ssh_extra_args=' -o StrictHostKeyChecking=no -o PreferredAuthentications=password '
