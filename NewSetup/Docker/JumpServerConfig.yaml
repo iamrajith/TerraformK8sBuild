@@ -1,0 +1,71 @@
+---
+- name : Create the key and copy to the nodes 
+  hosts: nodes,master,jumpserver
+  become : true 
+  tasks :
+    - name: Create the .ssh diectory,if it is not already exist
+      file:
+        path: /home/rajith/.ssh
+        state: directory
+        owner: rajith
+        group: rajith
+        #mode: '0700'
+    - name: Generate an OpenSSH keypair 
+      #community.crypto.
+      openssh_keypair:
+        path: '/home/rajith/.ssh/id_rsa'
+        size: 2048
+        force: True
+        owner: rajith
+        group: rajith
+      when: inventory_hostname == 'jumpserver'
+    - name: Set authorized key for user rajith copying it from current user
+      authorized_key:
+        user: rajith
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+    - name: Create user in the jump server
+      user:
+        name: "{{ item }}"
+        password: "{{ item | password_hash('sha512') }}"  # Encrypted password
+        state: present
+        createhome: yes  # Create the user's home directory
+      loop:
+        - user01
+        - user02
+        - user03
+        - user04
+        - user05
+        - user06
+        - user07
+        - user08
+        - user09
+        - user10
+        - user11
+        - user12
+        - user13
+        - user14
+        - user15
+        - user16
+        - user17
+        - user18
+        - user19
+        - user20
+      when: inventory_hostname == 'jumpserver'
+    - name: Create the .ssh diectory,if it is not already exist
+      file:
+        path: /home/"{{ node_user }}"/.ssh
+        state: directory
+        owner: "{{ node_user }}" 
+        group: "{{ node_user }}" 
+        #mode: '0700'
+      when: inventory_hostname == 'jumpserver'
+    - name: Generate an OpenSSH keypair 
+      #community.crypto.
+      openssh_keypair:
+        path: '/home/"{{ node_user }}" /.ssh/id_rsa'
+        size: 2048
+        force: True
+        owner: "{{ node_user }}" 
+        group: "{{ node_user }}" 
+      when: inventory_hostname == 'jumpserver'

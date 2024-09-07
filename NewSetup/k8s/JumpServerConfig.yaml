@@ -1,0 +1,55 @@
+---
+- name : Create the key and copy to the nodes 
+  hosts: nodes,master,jumpserver
+  become : true 
+  tasks :
+    - name: Create the .ssh diectory,if it is not already exist
+      file:
+        path: /home/rajith/.ssh
+        state: directory
+        owner: rajith
+        group: rajith
+        #mode: '0700'
+    - name: Generate an OpenSSH keypair 
+      #community.crypto.
+      openssh_keypair:
+        path: '/home/rajith/.ssh/id_rsa'
+        size: 2048
+        force: True
+        owner: rajith
+        group: rajith
+      when: inventory_hostname == 'jumpserver'
+    - name: Set authorized key for user rajith copying it from current user
+      authorized_key:
+        user: rajith
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+    - name: Disable password login
+      lineinfile: 
+        dest: /etc/ssh/sshd_config 
+        regexp: "^PasswordAuthentication" 
+        line: "PasswordAuthentication no" 
+        state: present
+      when: inventory_hostname != 'jumpserver'
+    - name: Restart the sshd service 
+      service : 
+       name : sshd 
+       state : restarted
+      when: inventory_hostname != 'jumpserver'
+    - name: Add kubernetes repository
+      yum_repository:
+       name: Kubernetes
+       description: Kubernetes
+       baseurl: 'https://pkgs.k8s.io/core:/stable:/v1.28/rpm/'
+       #baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+       enabled: True
+       gpgcheck: False
+       gpgcakey : 'https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key'
+       #gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+       #exclude: kubelet kubeadm kubectl cri-tools kubernetes-cni
+    
+    - name: Install a list of packages for kubernetes
+      yum:
+       name:
+        - kubectl
+       state: present

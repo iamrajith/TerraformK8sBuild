@@ -1,0 +1,15 @@
+---
+- name: Create user roles
+  hosts: localhost
+  gather_facts: no
+  vars:
+    users:
+      - { username: "user1", namespace: "namespace1" }
+      - { username: "user2", namespace: "namespace2" }
+      # Add other users and namespaces as needed
+  tasks:
+    - name: Generate role files
+      ansible.builtin.template:
+        src: user_role_template.j2
+        dest: "/home/rajith/data/{{ item.username }}-role.yaml"
+      loop: "{{ users }}"

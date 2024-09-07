@@ -1,0 +1,199 @@
+
+
+***************Pre check to ensure the docker is installed and running****************
+--> Ensure that the docker is installed in your system 
+
+rpm -q docker 
+
+--> if it is not installed 
+
+yum install docker -y 
+
+
+--> verify the docker service is started 
+
+systemctl status docker 
+
+
+--> If it is not running 
+
+systemctl start docker 
+
+--> If you wanted to keep it always running even after the server reboot
+
+
+systemctl enable docker 
+
+
+--> To verify it is enabled on boot 
+
+
+systemctl is-enabled docker 
+
+Note: - These are Linux commands,  not the docker related commands 
+ 
+******************************************************
+
+
+Creating an image using docker file 
+*********************************
+
+Copy the below content into a file and name the file as Dockerfile 
+
+
+--------------------------------
+# Selected the base image 
+FROM ubuntu
+# updating the image and installing the nginx
+RUN apt-get update -y ;DEBIAN_FRONTEND=noninteractive apt-get -yq install nginx
+# installing the curl 
+RUN apt-get install curl -y
+# Added startup entry 
+ENTRYPOINT  ["nginx", "-g", "daemon off;"]
+
+-------------------------------------
+
+Steps 
+
+--> Create a directory of your choice 
+
+mkdir Dockersetup 
+
+--> Change your working directory to the new directory 
+
+cd Dockersetup
+
+--> To confirm you are in that directory execute the command pwd -- present working directory 
+
+pwd 
+
+--> check the file is available 
+
+ls -l 
+
+--> List the currently available image in your system 
+
+docker images 
+
+
+docker build . -t ubuntu-nginx
+
+
+--> Once the build is completed verify the image is created 
+
+
+docker images 
+
+----------------------------------
+
+
+--> Running the image with the newly created image.
+
+
+docker run -d  ubuntu-nginx  
+
+Note : -d stands for a detached mode 
+
+
+------------------------------
+
+--> Image for a container 
+
+--> Create a container with the ubuntu image 
+
+docker run -it ubuntu
+
+--> Once you get the container terminal, patch the container 
+
+apt-get update -y 
+
+
+--> Install the nginx 
+
+
+DEBIAN_FRONTEND=noninteractive apt-get -yq install nginx
+
+--> Install curl 
+
+apt-get install curl -y
+
+
+--> Either take a new putty session or press control+c and come out from the running container 
+
+
+--> execute the below command to get the container id 
+
+docker ps -a  -- Make a not of container id 
+
+--> Execute the below command to create an image from the container  
+
+docker commit 381aed84d139 ubuntu-nginx-commit   -- replace your container id in this command 
+
+--> Verify the image is created 
+
+docker images  
+
+--> Create a container with newly created images 
+
+docker run -it ubuntu-nginx-commit
+
+
+--> Now you will be into the container 
+
+--> execute ps command to find the running processes inside the container 
+
+ps -ef
+
+--> You will not find any running processes. 
+
+--> Verify the status of nginx  
+
+/etc/init.d/nginx status 
+
+--> Start the service 
+
+/etc/init.d/nginx start 
+
+--> Verify the process again 
+
+ ps -ef
+
+
+
+--> Now if you wanted to expose the nginx outside the docker you can follow the below step 
+
+
+
+root@shiva:~# docker run -it -p 80:80 ubuntu-nginx-commit
+root@d3d310d24c79:/# ps -ef
+UID          PID    PPID  C STIME TTY          TIME CMD
+root           1       0  0 10:41 pts/0    00:00:00 bash
+root          10       1  0 10:41 pts/0    00:00:00 ps -ef
+root@d3d310d24c79:/# /etc/init.d/nginx status 
+ * nginx is not running
+root@d3d310d24c79:/# /etc/init.d/nginx start  
+ * Starting nginx nginx                                                                      [ OK ] 
+root@d3d310d24c79:/# ps -ef
+UID          PID    PPID  C STIME TTY          TIME CMD
+root           1       0  0 10:41 pts/0    00:00:00 bash
+root          40       1  0 10:42 ?        00:00:00 nginx: master process /usr/sbin/nginx
+www-data      41      40  0 10:42 ?        00:00:00 nginx: worker process
+www-data      42      40  0 10:42 ?        00:00:00 nginx: worker process
+www-data      43      40  0 10:42 ?        00:00:00 nginx: worker process
+www-data      44      40  0 10:42 ?        00:00:00 nginx: worker process
+root          46       1  0 10:42 pts/0    00:00:00 ps -ef
+root@d3d310d24c79:/# 
+
+now try accessing the nginx through the browser ( give your public IP in the web browser ) 
+
+
+
+
+
+
+
+
+
+
+
+

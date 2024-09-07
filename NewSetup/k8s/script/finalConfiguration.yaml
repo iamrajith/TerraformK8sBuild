@@ -1,0 +1,23 @@
+---
+- name : Initilize the kubernetes master server 
+  hosts : master
+  become: true
+  tasks:
+
+    - name: Create a directory if it does not exist
+      file:
+         path: /home/rajith/data
+         state: directory
+         
+
+    - name : Fetch the kube config file to the jump server 
+      fetch: 
+        src: /etc/kubernetes/pki/apiserver.crt
+        dest: /home/rajith/data/ca.crt
+        flat: yes
+      
+    - name: Get the kube config to jump server
+      fetch:
+       src: /home/rajith/.kube/config
+       dest: /home/rajith/.kube/config
+       flat: yes

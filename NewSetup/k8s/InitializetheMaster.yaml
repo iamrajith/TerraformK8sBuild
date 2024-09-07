@@ -1,0 +1,53 @@
+---
+- name : Initilize the kubernetes master server 
+  hosts : master
+  become: true
+  tasks:
+  # Step 2.3: Initialize the Kubernetes cluster with kubeadm using the below code (applicable only on master node).
+  - name: Initialize the Kubernetes cluster using kubeadm
+    command: kubeadm init --apiserver-advertise-address="172.16.10.100" --apiserver-cert-extra-sans="172.16.10.100"  --node-name master --pod-network-cidr=192.168.0.0/24
+
+  # Step 2.4: Setup the kube config file for the vagrant user to access the Kubernetes cluster using the below code.
+  - name: Setup kubeconfig for user rajith
+    command: "{{ item }}"
+    with_items:
+     - mkdir -p /home/rajith/.kube
+     - cp -i /etc/kubernetes/admin.conf /home/rajith/.kube/config
+     - chown rajith:rajith /home/rajith/.kube/config
+
+  - name: Store file into /tmp/fetched/host.example.com/tmp/somefile
+    fetch:
+      src: /home/rajith/.kube/config
+      dest: /home/rajith/.kube/config
+      flat: yes
+
+  - name: Generate join command
+    command: kubeadm token create --print-join-command
+    register: join_command
+
+
+  - name: Set up autocomplete in bash into the current shell
+    shell: source <(kubectl completion bash) 
+    become_user: rajith
+    ignore_errors: true
+
+  - name: Add autocomplete permanently to your bash shell.
+    shell: echo "source <(kubectl completion bash)" >> ~/.bashrc
+    become_user: rajith
+    ignore_errors: true
+
+  - name: Copy join command to local file
+    local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="/tmp/join-command.sh"
+
+
+  - name: Waits for the API server to come-up, don't start checking for 10 seconds
+    ansible.builtin.wait_for:
+      host: 172.16.10.100
+      port: 6443
+      delay: 10
+
+
+
+   
+
+

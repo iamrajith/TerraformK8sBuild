@@ -1,0 +1,14 @@
+---
+- name: Create users on specific nodes
+  hosts: nodes
+  become: yes  # Run tasks with root/sudo privileges
+
+  tasks:
+    - name: Create user
+      user:
+        name: "{{ node_user }}"  # Use the inventory variable for the username
+        state: present
+        createhome: yes
+        password: "{{ node_user | password_hash('sha512') }}"
+        groups: wheel, ec2-user
+        
