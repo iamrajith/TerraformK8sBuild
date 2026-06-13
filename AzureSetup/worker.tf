@@ -1,24 +1,25 @@
-resource "azurerm_linux_virtual_machine" "node01" {
+resource "azurerm_linux_virtual_machine" "node0" {
+  count = var.node_count
 
-  name                = "node01"
+  name = "node${format("%02d", count.index + 1)}"    
 
   resource_group_name = data.azurerm_resource_group.rg.name
 
-  location            = data.azurerm_resource_group.rg.location
+  location = data.azurerm_resource_group.rg.location
 
-  size                = "Standard_D2s_v3"
+  size = "Standard_D2s_v3"
 
-  admin_username      = var.admin_username
+  admin_username = var.admin_username
 
   network_interface_ids = [
-    azurerm_network_interface.node01_nic.id
+    azurerm_network_interface.node_nic[count.index].id
   ]
 
   disable_password_authentication = false
 
-  admin_password = "Test@12345678"
- 
- /* admin_ssh_key {
+  admin_password = var.admin_password
+
+  /* admin_ssh_key {
 
     username   = var.admin_username
 
@@ -29,16 +30,16 @@ resource "azurerm_linux_virtual_machine" "node01" {
 
     publisher = "Canonical"
 
-    offer     = "0001-com-ubuntu-server-jammy"
+    offer = "0001-com-ubuntu-server-jammy"
 
-    sku       = "22_04-lts"
+    sku = "22_04-lts"
 
-    version   = "latest"
+    version = "latest"
   }
 
   os_disk {
 
-    caching              = "ReadWrite"
+    caching = "ReadWrite"
 
     storage_account_type = "Standard_LRS"
   }

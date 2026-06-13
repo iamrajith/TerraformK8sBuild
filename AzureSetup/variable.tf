@@ -16,6 +16,10 @@ variable "ssh_public_key" {
 
 variable "node_count" {
   type = number
-  default = 1
+  default = 2
   
+}
+variable "admin_password" {
+  type = string
+  default = "Test@12345678"
 }

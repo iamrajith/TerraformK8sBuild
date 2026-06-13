@@ -1,0 +1,10 @@
+[master]
+172.16.10.4  ansible_connection=local
+[worker]
+172.16.10.5
+172.16.10.6
+
+[all:vars]
+ansible_user=rajith
+ansible_password=Test@12345678
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
